@@ -9,15 +9,6 @@ echo "==== STEP 2: Install PostgreSQL ===="
 sudo apt-get update
 sudo apt-get install -y postgresql postgresql-contrib
 
-echo "==== STEP 3: Modify pg_hba.conf (peer → md5) ===="
-PG_HBA=$(sudo find /etc/postgresql -name pg_hba.conf)
-
-sudo sed -i 's/peer/md5/g' $PG_HBA
-sudo sed -i 's/trust/md5/g' $PG_HBA
-
-echo "Restarting PostgreSQL..."
-sudo systemctl restart postgresql
-
 echo "==== STEP 4: Create PostgreSQL user & DB for Medusa ===="
 read -p "Enter Medusa DB Username: " DB_USER
 read -p "Enter Medusa DB Password: " DB_PASS
@@ -34,13 +25,22 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO $DB_USER;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO $DB_USER;
 EOF
 
+echo "==== STEP 3: Modify pg_hba.conf (peer → md5) ===="
+PG_HBA=$(sudo find /etc/postgresql -name pg_hba.conf)
+
+sudo sed -i 's/peer/md5/g' $PG_HBA
+sudo sed -i 's/trust/md5/g' $PG_HBA
+
+echo "Restarting PostgreSQL..."
+sudo systemctl restart postgresql
+
 echo "==== STEP 5: Create Medusa project ===="
-mkdir -p /var/www/medusa
-cd /var/www/medusa
+mkdir -p ./medusa
+cd ./medusa
 npx create-medusa-app@latest .
 
 echo "==== STEP 6: Configure Medusa CORS for domain ===="
-read -p "Enter your domain (example: api.domain.com): " DOMAIN
+read -p "Enter your domain (example: api.domainname.com): " DOMAIN
 
 sed -i "s|localhost:7001|$DOMAIN|g" medusa-config.js
 sed -i "s|127.0.0.1|0.0.0.0|g" medusa-config.js
